@@ -309,7 +309,9 @@ function final() {
 }
 
 async function init() {
-  captureScreenEverySecond();
+  if (config.captureScreenAutomatically === 'yes') {
+    captureScreenEverySecond();
+  }
 
   const workers = [
     detectNetworkCondition,
