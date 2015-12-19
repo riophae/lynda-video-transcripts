@@ -1,0 +1,21 @@
+detectNetworkStatus:
+  yes
+
+userAgent:
+  Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.73 Safari/537.36
+
+viewportSize:
+  width: 1920
+  height: 1280
+
+username:
+  iamyourfather@holyfield.com
+
+password:
+  topsecret
+
+startPoint:
+  http://www.lynda.com/Photoshop-tutorials/Automatic-BrightnessContrast/373100/427042-4.html
+
+intervalBetweenTutorialVisits:
+  20
