@@ -101,8 +101,8 @@ async function ensureLoggedIn() {
           resolve();
         } else {
           page.evaluate(() => {
-            document.getElementById('usernameInput').value = 'etchingubvf@gmail.com';
-            document.getElementById('passwordInput').value = '907p9p098';
+            document.getElementById('usernameInput').value = '';
+            document.getElementById('passwordInput').value = '';
             document.getElementById('lnk_login').click();
           });
 
