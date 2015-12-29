@@ -1,6 +1,6 @@
 # Lynda Video Transcripts
 
-一个批量抓取 Lynda 视频字幕的爬虫脚本。
+一个批量抓取 [Lynda](http://www.lynda.com/) 视频字幕的爬虫脚本。
 
 ## Requirements
 
