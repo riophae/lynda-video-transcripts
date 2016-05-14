@@ -53,4 +53,4 @@ function app(name) {
   bundle();
 }
 
-['main', 'test'].forEach(app);
+['entry', 'test'].forEach(app);

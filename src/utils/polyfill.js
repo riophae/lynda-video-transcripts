@@ -1,2 +1,2 @@
-require('yaku/lib/global');
-require('babel-polyfill');
+import 'yaku/lib/global';
+import 'babel-polyfill';

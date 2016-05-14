@@ -1,8 +1,6 @@
 /* global phantom */
 /* eslint-disable no-use-before-define */
 
-require('./utils/polyfill');
-
 import fs from 'fs';
 
 import moment from 'moment';
