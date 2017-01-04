@@ -54,20 +54,20 @@ async function detectNetworkCondition() {
       console.error('网络连接故障');
       return;
     }
-    console.log('网络状态正常');
+    console.log('网络连接正常');
   }
 }
 
 function getLoginStatusFromCookie() {
   const loginStatusCookie = page.cookies.find((cookie) => cookie.name === 'LyndaLoginStatus');
-  return !!loginStatusCookie && loginStatusCookie.value.indexOf('Not-Logged-In') === -1;
+  return !!loginStatusCookie && loginStatusCookie.value === ('Member-Logged-In');
 }
 
 async function ensureLoggedIn() {
   await openHomePage();
 
   const isLoggedIn = getLoginStatusFromCookie();
-  console.log('登录状态：', isLoggedIn);
+  console.log(`登录状态：${isLoggedIn ? '已登录' : '未登录'}`);
 
   if (isLoggedIn) {
     return;
