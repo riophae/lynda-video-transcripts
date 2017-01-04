@@ -14,44 +14,15 @@ import toInt from './utils/toInt';
 import padZero from './utils/padZero';
 import formatTimestamp from './utils/formatTimestamp';
 import sleep from './utils/sleep';
-import loop from './utils/loop';
 
 const origin = 'https://www.lynda.com';
 const NEW_LINE = '\r\n';
 
 let page;
 
-function resetPage() {
-  page = require('webpage').create();
-
-  Object.assign(page, {
-    viewportSize: config.viewportSize,
-    onConsoleMessage(msg) {
-      if (!msg || !msg.indexOf) {
-        return;
-      }
-
-      if (msg.indexOf('LYNDA_CRAWLER') === 0) {
-        console.log(msg.replace('LYNDA_CRAWLER ', ''));
-      }
-    },
-  });
-  Object.assign(page.settings, {
-    userAgent: config.userAgent,
-  });
-
-  return page;
-}
-
 function openPage(url, actionName) {
   page = require('webpage').create();
   page.viewportSize = config.viewportSize;
-  page.onConsoleMessage = (msg) => {
-    const CONSOLE_MSG_PREFIX = 'LYNDA_CRAWLER';
-    if (msg && msg.indexOf && msg.startsWith(CONSOLE_MSG_PREFIX)) {
-      console.log(msg.replace(CONSOLE_MSG_PREFIX + ' ', ''));
-    }
-  };
   page.settings.userAgent = config.userAgent;
 
   const timer = createTimer(actionName);
