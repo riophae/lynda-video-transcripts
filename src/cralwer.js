@@ -15,7 +15,8 @@ import padZero from './utils/padZero';
 import formatTimestamp from './utils/formatTimestamp';
 import sleep from './utils/sleep';
 
-const origin = 'https://www.lynda.com';
+const LYNDA_ORIGIN = 'https://www.lynda.com';
+const OUTPUT_DIR = 'output';
 const NEW_LINE = '\r\n';
 
 let page;
@@ -74,7 +75,7 @@ async function ensureLoggedIn() {
   }
 
   try {
-    const url = origin + '/signin';
+    const url = LYNDA_ORIGIN + '/signin';
     await openPage(url, '打开登录页面');
   } catch (err) {
     console.error('无法打开登录页面');
@@ -86,6 +87,7 @@ async function ensureLoggedIn() {
     document.getElementById('username-submit').click();
   }`);
 
+  console.log('已提交用户名，等待响应');
   for (let tryTimes = 0; ;) {
     await sleep(2000);
     const passwordInputExists = page.evaluate(() => !!document.getElementById('password-submit')); // eslint-disable-line no-loop-func
@@ -98,8 +100,10 @@ async function ensureLoggedIn() {
 
   page.evaluate(`function () {
     document.getElementById('password-input').value = ${JSON.stringify(config.password)};
+    document.getElementById('remember-me').checked = true;
     document.getElementById('password-submit').click();
   }`);
+  console.log('已提交密码，等待响应');
 
   for (let tryTimes = 0; tryTimes < 10; tryTimes++) {
     await sleep(2000);
@@ -113,143 +117,84 @@ async function ensureLoggedIn() {
 }
 
 async function openHomePage() {
-  const url = origin + '/';
+  const url = LYNDA_ORIGIN + '/';
   await openPage(url, '打开首页');
   captureScreen(page, 'homepage');
 }
 
-function openTutorialPage(url) {
-  const timer = createTimer('打开课程页面');
-  console.log('课程页面地址：', url);
+async function openTutorialPage(url) {
+  const startedAt = Date.now();
+  await openPage(url, `打开课程页面 ${url}`);
+  captureScreen(page, 'tutorial');
 
-  return new Promise((resolve, reject) => {
-    const startedAt = Date.now();
+  const videoInfo = page.evaluate(() => {
+    const container = document.querySelector('#toc-content');
+    const videoItems = container.querySelectorAll('.video-name-cont .video-name[role="listitem"]');
+    const currentVideo = container.querySelector('.toc-video-item.current .video-name-cont .video-name[role="listitem"]');
 
-    resetPage().open(url, (status) => {
-      timer.stop();
-      console.log('打开课程页面：', status);
-      if (status !== 'success') {
-        reject();
-      } else {
-        captureScreen(page, 'tutorial');
+    return {
+      tutorialNo: videoItems::([].indexOf)(currentVideo),
+      tutorialTitle: currentVideo.textContent.trim(),
+      videoDuration: container.querySelector('.toc-video-item.current .video-name-cont .video-duration').textContent.trim(),
+    };
+  });
+  const [, m, s] = videoInfo.videoDuration.match(/^(\d+)m\s+(\d+)s$/);
+  const videoTotalLength = toInt(m) * 60 + toInt(s);
 
-        const videoInfo = page.evaluate(() => {
-          const indexOf = Array.prototype.indexOf;
-          const $ = ::document.querySelector;
-          const $find = Element.prototype.querySelector;
-          const $findAll = Element.prototype.querySelectorAll;
+  const transcriptData = page.evaluate(() => {
+    const transcripts = document.querySelectorAll('.toc-video-item.current .transcript');
 
-          const isOldInterface = !!$('#course-toc-outer');
-
-          // 若使用 `console.log()` 的话，命令行中看不到相关日志
-          console.error('是否进入了旧界面：', isOldInterface);
-
-          if (isOldInterface) {
-            const container = $('#course-toc-outer');
-            const videoItems = container::$findAll('.video-cta');
-            const currentVideo = container::$find('.now .video-cta');
-            const tutorialTitle = currentVideo.getAttribute('data-video-title');
-
-            const tutorialNo = videoItems::indexOf(currentVideo);
-            const videoDuration = currentVideo.getAttribute('data-video-duration');
-
-            return { tutorialNo, tutorialTitle, videoDuration };
-          }
-
-          const container = $('#toc-content');
-          const videoItems = container::$findAll('.video-name-cont .video-name[role="listitem"]');
-          const currentVideo = container::$find('.toc-video-item.current .video-name-cont .video-name[role="listitem"]');
-          const tutorialTitle = currentVideo.textContent;
-
-          const tutorialNo = videoItems::indexOf(currentVideo);
-          const videoDuration = container::$find('.toc-video-item.current .video-name-cont .video-duration').textContent;
-
-          return { tutorialNo, tutorialTitle, videoDuration };
-        });
-        const [, m, s] = videoInfo.videoDuration.trim().match(/^(\d+)m\s+(\d+)s$/);
-        const videoTotalLength = toInt(m) * 60 + toInt(s);
-
-        const transcriptData = page.evaluate(() => {
-          const $ = ::document.querySelector;
-          const $$ = ::document.querySelectorAll;
-
-          const isOldInterface = !!$('#course-toc-outer');
-          const transcripts = isOldInterface
-            ? $$('#tab-transcript .video-transcript span.transcript')
-            : $$('.toc-video-item.current .transcript')
-          ;
-
-          return [].map.call(transcripts, (item) => ({
-            start: parseFloat(item.getAttribute('data-duration')),
-            text: item.textContent.replace(/^-\s+/, '').trim(),
-          })).sort((a, b) => {
-            return a.start - b.start > 0;
-          }).map((item, idx) => {
-            item.index = idx + 1;
-            return item;
-          });
-        });
-
-        const fileName = padZero(videoInfo.tutorialNo + 1, 3) + '.srt';
-        const content = transcriptData.reduce((accum, item, idx) => {
-          const { index, start, text } = item;
-          const nextItem = transcriptData[idx + 1];
-          const end = nextItem ? nextItem.start : videoTotalLength;
-          const arr = [];
-          arr.push(
-            index,
-            `${formatTimestamp(start)} --> ${formatTimestamp(end)}`,
-            text,
-            '',
-            ''
-          );
-          return accum.concat(arr);
-        }, []).join(NEW_LINE).trim() + NEW_LINE;
-
-        console.log('课程标题：', videoInfo.tutorialTitle);
-        console.log('尝试写入文件…', fileName, content.length);
-        fs.write('output/' + fileName, content);
-
-        const nextTutorialUrl = page.evaluate(() => {
-          const indexOf = Array.prototype.indexOf;
-          const $ = ::document.querySelector;
-          const $find = Element.prototype.querySelector;
-          const $findAll = Element.prototype.querySelectorAll;
-
-          const isOldInterface = !!$('#course-toc-outer');
-
-          const container = isOldInterface
-            ? $('#course-toc-outer')
-            : $('#toc-content')
-          ;
-          const videoItems = isOldInterface
-            ? container::$findAll('.video-cta')
-            : container::$findAll('.video-name-cont .video-name[role="listitem"]')
-          ;
-          const currentVideo = isOldInterface
-            ? container::$find('.now .video-cta')
-            : container::$find('.toc-video-item.current .video-name-cont .video-name[role="listitem"]')
-          ;
-
-          const idx = videoItems::indexOf(currentVideo);
-          const nextVideo = videoItems[idx + 1];
-          return nextVideo && nextVideo.href;
-        });
-
-        if (nextTutorialUrl) {
-          const endedAt = Date.now();
-          const duration = endedAt - startedAt;
-          const wait = Math.max(0, config.intervalBetweenTutorialVisits * 1000 - duration);
-
-          if (wait) console.log(`等待 ${wait}ms…`);
-          console.log('');
-          resolve(sleep(wait).then(() => openTutorialPage(nextTutorialUrl)));
-        } else {
-          resolve();
-        }
-      }
+    return transcripts::([].map)((item) => ({
+      start: parseFloat(item.getAttribute('data-duration')),
+      text: item.textContent.replace(/^-\s+/, '').trim(),
+    })).sort((a, b) => {
+      return a.start - b.start;
+    }).map((item, idx) => {
+      item.index = idx + 1;
+      return item;
     });
   });
+
+  const fileName = padZero(videoInfo.tutorialNo + 1, 3) + '.srt';
+  const content = transcriptData.reduce((arr, item, idx) => {
+    const { index, start, text } = item;
+    const nextItem = transcriptData[idx + 1];
+    const end = nextItem ? nextItem.start : videoTotalLength;
+    return arr.concat([
+      index,
+      `${formatTimestamp(start)} --> ${formatTimestamp(end)}`,
+      text,
+      '',
+      '',
+    ]);
+  }, []).join(NEW_LINE).trim() + NEW_LINE;
+
+  console.log('课程标题：', videoInfo.tutorialTitle);
+  console.log('尝试写入文件…', '文件名：', fileName, '内容长度：', content.length);
+  fs.write(OUTPUT_DIR + '/' + fileName, content);
+
+  const nextTutorialUrl = page.evaluate(() => {
+    const container = document.querySelector('#toc-content');
+    const videoItems = container.querySelectorAll('.video-name-cont .video-name[role="listitem"]');
+    const currentVideo = container.querySelector('.toc-video-item.current .video-name-cont .video-name[role="listitem"]');
+
+    const idx = videoItems::([].indexOf)(currentVideo);
+    const nextVideo = videoItems[idx + 1];
+    return nextVideo && nextVideo.href;
+  });
+
+  if (nextTutorialUrl) {
+    const endedAt = Date.now();
+    const duration = endedAt - startedAt;
+    const wait = config.intervalBetweenTutorialVisits * 1000 - duration;
+
+    if (wait > 0) {
+      console.log(`等待 ${wait}ms…`);
+      await(sleep(wait));
+    }
+    console.log('');
+    await openTutorialPage(nextTutorialUrl);
+  }
 }
 
 function final() {
@@ -261,17 +206,17 @@ async function init() {
     captureScreenEverySecond();
   }
 
-  const workers = [
+  const tasks = [
     detectNetworkCondition,
     ensureLoggedIn,
     openHomePage,
-    // () => openTutorialPage(config.startPoint),
+    () => openTutorialPage(config.startPoint),
     final,
   ];
 
-  for (const worker of workers) {
+  for (const task of tasks) {
     console.log('');
-    await worker();
+    await task();
   }
 }
 
