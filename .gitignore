@@ -7,3 +7,6 @@ lib
 
 output
 screenshots
+
+phantomjs/cookies.txt
+phantomjs/cache

@@ -8,6 +8,7 @@ export default function createTimer(msgPrefix) {
   return {
     stop() {
       console.log(`${msgPrefix} 用时：${timer.ms}ms`);
+
       timer.stop();
     },
   };

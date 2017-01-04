@@ -1,0 +1,5 @@
+{
+  "cookiesFile": "phantomjs/cookies.txt",
+  "diskCacheEnabled": true,
+  "diskCachePath": "phantomjs/cache"
+}

@@ -7,6 +7,7 @@ import moment from 'moment';
 
 import config from '../config.yaml';
 
+import Deferred from './utils/deferred';
 import createTimer from './utils/createTimer';
 import captureScreen from './utils/captureScreen';
 import toInt from './utils/toInt';
@@ -15,7 +16,7 @@ import formatTimestamp from './utils/formatTimestamp';
 import sleep from './utils/sleep';
 import loop from './utils/loop';
 
-const origin = 'http://www.lynda.com';
+const origin = 'https://www.lynda.com';
 const NEW_LINE = '\r\n';
 
 let page;
@@ -42,131 +43,108 @@ function resetPage() {
   return page;
 }
 
+function openPage(url, actionName) {
+  page = require('webpage').create();
+  page.viewportSize = config.viewportSize;
+  page.onConsoleMessage = (msg) => {
+    const CONSOLE_MSG_PREFIX = 'LYNDA_CRAWLER';
+    if (msg && msg.indexOf && msg.startsWith(CONSOLE_MSG_PREFIX)) {
+      console.log(msg.replace(CONSOLE_MSG_PREFIX + ' ', ''));
+    }
+  };
+  page.settings.userAgent = config.userAgent;
+
+  const timer = createTimer(actionName);
+  const deferred = new Deferred();
+  page.open(url, (status) => {
+    timer.stop();
+    if (status === 'success') {
+      deferred.resolve();
+    } else {
+      deferred.reject();
+    }
+  });
+
+  return deferred.promise;
+}
+
 function captureScreenEverySecond() {
   setInterval(() => {
-    if (page) {
-      captureScreen(page, moment().format('HH-mm-ss'));
-    }
+    if (page) captureScreen(page, moment().format('HH-mm-ss'));
   }, 1000);
 }
 
-function detectNetworkCondition() {
-  if (config.detectNetworkCondition !== 'yes') {
-    return Promise.resolve();
+async function detectNetworkCondition() {
+  if (config.detectNetworkCondition === 'yes') {
+    const url = 'https://www.baidu.com';
+    try {
+      await openPage(url, '检查网络连接');
+    } catch (err) {
+      console.error('网络连接故障');
+      return;
+    }
+    console.log('网络状态正常');
   }
-
-  const timer = createTimer('检查网络连接');
-  const url = 'https://www.baidu.com';
-
-  return new Promise((res, rej) => {
-    resetPage().open(url, (status) => {
-      timer.stop();
-      console.log('网络连接状态：', status);
-
-      if (status === 'success') {
-        res();
-      } else {
-        rej();
-      }
-    });
-  });
 }
 
 function getLoginStatusFromCookie() {
-  let isLoggedIn = false;
   const loginStatusCookie = page.cookies.find((cookie) => cookie.name === 'LyndaLoginStatus');
-  if (loginStatusCookie && loginStatusCookie.value.indexOf('Not-Logged-In') === -1) {
-    isLoggedIn = true;
-  }
-  return isLoggedIn;
+  return !!loginStatusCookie && loginStatusCookie.value.indexOf('Not-Logged-In') === -1;
 }
 
 async function ensureLoggedIn() {
-  const timer = createTimer('检查登录状态');
-  const url = origin + '/login/login.aspx';
+  await openHomePage();
 
-  return new Promise((resolve, reject) => {
-    resetPage().open(url, (status) => {
-      timer.stop();
-      console.log('打开登录检查页面：', status);
-      if (status !== 'success') {
-        console.error('检查登录状态失败：无法成功打开页面');
-        reject();
-      } else {
-        const isLoggedIn = getLoginStatusFromCookie();
-        console.log('登录状态：', isLoggedIn);
-        if (isLoggedIn) {
-          resolve();
-        } else {
-          page.evaluate(`function () {
-            document.getElementById('usernameInput').value = ${JSON.stringify(config.username)};
-            document.getElementById('passwordInput').value = ${JSON.stringify(config.password)};
-            document.getElementById('lnk_login').click();
-          }`);
+  const isLoggedIn = getLoginStatusFromCookie();
+  console.log('登录状态：', isLoggedIn);
 
-          loop(10, () => new Promise(async (res, rej) => {
-            if (getLoginStatusFromCookie()) {
-              console.log('从 cookie 判断，登录操作已生效');
+  if (isLoggedIn) {
+    return;
+  }
 
-              if (page.url === 'http://www.lynda.com/member') {
-                console.log('跳转到了用户页面，认为已登录成功');
-                res();
-                return;
-              }
+  try {
+    const url = origin + '/signin';
+    await openPage(url, '打开登录页面');
+  } catch (err) {
+    console.error('无法打开登录页面');
+    throw err;
+  }
 
-              const btnFound = page.evaluate(() => {
-                const doc = window.frames.length
-                  ? frames['fancybox-frame'].contentDocument
-                  : document
-                ;
-                const ensureBtn = doc.getElementById('conflicedOk');
-                if (ensureBtn) {
-                  ensureBtn.click();
-                  return true;
-                }
-                return false;
-              });
+  page.evaluate(`function () {
+    document.getElementById('email-address').value = ${JSON.stringify(config.username)};
+    document.getElementById('username-submit').click();
+  }`);
 
-              if (btnFound) {
-                const delay = 5000;
-                console.log('找到了确认登录按钮，退登其他已登录设备');
-                console.log(`等待 ${delay}ms…`);
-                await sleep(delay);
-                res();
-                return;
-              }
-              console.log('未找到确认登录按钮');
-              console.log('当前页面：', page.url);
-            } else {
-              console.log('从 cookie 判断，登录操作还未生效');
-            }
+  for (let tryTimes = 0; ;) {
+    await sleep(2000);
+    const passwordInputExists = page.evaluate(() => !!document.getElementById('password-submit')); // eslint-disable-line no-loop-func
+    if (!passwordInputExists && ++tryTimes >= 10) {
+      throw new Error('提交用户名后服务器没有及时响应');
+    } else {
+      break;
+    }
+  }
 
-            await sleep(1000);
-            rej();
-          })).then(resolve, reject);
-        }
-      }
-    });
-  });
+  page.evaluate(`function () {
+    document.getElementById('password-input').value = ${JSON.stringify(config.password)};
+    document.getElementById('password-submit').click();
+  }`);
+
+  for (let tryTimes = 0; tryTimes < 10; tryTimes++) {
+    await sleep(2000);
+    if (getLoginStatusFromCookie()) {
+      console.log('登录成功！');
+      return;
+    }
+  }
+
+  throw new Error('登录失败');
 }
 
-function openHomePage() {
-  const timer = createTimer('打开首页');
+async function openHomePage() {
   const url = origin + '/';
-
-  return new Promise((resolve, reject) => {
-    resetPage().open(url, (status) => {
-      timer.stop();
-      console.log('打开首页：', status);
-
-      if (status !== 'success') {
-        reject();
-      } else {
-        captureScreen(page, 'homepage');
-        resolve();
-      }
-    });
-  });
+  await openPage(url, '打开首页');
+  captureScreen(page, 'homepage');
 }
 
 function openTutorialPage(url) {
@@ -192,7 +170,8 @@ function openTutorialPage(url) {
 
           const isOldInterface = !!$('#course-toc-outer');
 
-          console.log('LYNDA_CRAWLER', '是否进入了旧界面：', isOldInterface);
+          // 若使用 `console.log()` 的话，命令行中看不到相关日志
+          console.error('是否进入了旧界面：', isOldInterface);
 
           if (isOldInterface) {
             const container = $('#course-toc-outer');
@@ -315,7 +294,7 @@ async function init() {
     detectNetworkCondition,
     ensureLoggedIn,
     openHomePage,
-    () => openTutorialPage(config.startPoint),
+    // () => openTutorialPage(config.startPoint),
     final,
   ];
 
