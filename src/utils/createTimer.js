@@ -2,13 +2,12 @@ import Stopwatch from 'timer-stopwatch';
 
 export default function createTimer(msgPrefix) {
   const timer = new Stopwatch();
-  console.log(`${msgPrefix}……`);
+  console.log(`Start: ${msgPrefix}`);
   timer.start();
 
   return {
     stop() {
-      console.log(`${msgPrefix} 用时：${timer.ms}ms`);
-
+      console.log(`Completed in ${timer.ms}ms: ${msgPrefix}`);
       timer.stop();
     },
   };

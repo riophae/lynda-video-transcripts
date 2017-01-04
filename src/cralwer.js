@@ -50,12 +50,12 @@ async function detectNetworkCondition() {
   if (config.detectNetworkCondition === 'yes') {
     const url = 'https://www.baidu.com';
     try {
-      await openPage(url, '检查网络连接');
+      await openPage(url, 'Test network connection');
     } catch (err) {
-      console.error('网络连接故障');
+      console.error('Failed to connect network.');
       return;
     }
-    console.log('网络连接正常');
+    console.log('Network connection is okay.');
   }
 }
 
@@ -68,7 +68,7 @@ async function ensureLoggedIn() {
   await openHomePage();
 
   const isLoggedIn = getLoginStatusFromCookie();
-  console.log(`登录状态：${isLoggedIn ? '已登录' : '未登录'}`);
+  console.log(`Login status：${isLoggedIn ? 'Logged-in' : 'Not logged-in'}`);
 
   if (isLoggedIn) {
     return;
@@ -76,9 +76,9 @@ async function ensureLoggedIn() {
 
   try {
     const url = LYNDA_ORIGIN + '/signin';
-    await openPage(url, '打开登录页面');
+    await openPage(url, 'Open login-in page');
   } catch (err) {
-    console.error('无法打开登录页面');
+    console.error('Failed to open login-in page');
     throw err;
   }
 
@@ -87,12 +87,12 @@ async function ensureLoggedIn() {
     document.getElementById('username-submit').click();
   }`);
 
-  console.log('已提交用户名，等待响应');
+  console.log('Username submitted, waiting for response...');
   for (let tryTimes = 0; ;) {
     await sleep(2000);
     const passwordInputExists = page.evaluate(() => !!document.getElementById('password-submit')); // eslint-disable-line no-loop-func
     if (!passwordInputExists && ++tryTimes >= 10) {
-      throw new Error('提交用户名后服务器没有及时响应');
+      throw new Error('Response timeout.');
     } else {
       break;
     }
@@ -103,28 +103,30 @@ async function ensureLoggedIn() {
     document.getElementById('remember-me').checked = true;
     document.getElementById('password-submit').click();
   }`);
-  console.log('已提交密码，等待响应');
+  console.log('Password submitted, waiting for response...');
 
   for (let tryTimes = 0; tryTimes < 10; tryTimes++) {
     await sleep(2000);
     if (getLoginStatusFromCookie()) {
-      console.log('登录成功！');
+      console.log('Login success！');
       return;
     }
   }
 
-  throw new Error('登录失败');
+  throw new Error('Login failure');
 }
 
 async function openHomePage() {
   const url = LYNDA_ORIGIN + '/';
-  await openPage(url, '打开首页');
+  await openPage(url, 'Open homepage');
   captureScreen(page, 'homepage');
 }
 
 async function openTutorialPage(url) {
   const startedAt = Date.now();
-  await openPage(url, `打开课程页面 ${url}`);
+  console.log(moment().format());
+
+  await openPage(url, `Open tutorial page ${url}`);
   captureScreen(page, 'tutorial');
 
   const videoInfo = page.evaluate(() => {
@@ -165,8 +167,8 @@ async function openTutorialPage(url) {
     ]);
   }, []).join(NEW_LINE).trim() + NEW_LINE;
 
-  console.log('课程标题：', videoInfo.tutorialTitle);
-  console.log('尝试写入文件…', '文件名：', fileName, '内容长度：', content.length);
+  console.log('Tutorial title:', videoInfo.tutorialTitle);
+  console.log('Attempting to write file:', fileName, '/', 'Content length:', content.length);
   fs.write(OUTPUT_DIR + '/' + fileName, content);
 
   const nextTutorialUrl = page.evaluate(() => {
@@ -185,7 +187,7 @@ async function openTutorialPage(url) {
     const wait = config.intervalBetweenTutorialVisits * 1000 - duration;
 
     if (wait > 0) {
-      console.log(`等待 ${wait}ms…`);
+      console.log(`Sleep ${wait}ms…`);
       await(sleep(wait));
     }
     console.log('');
