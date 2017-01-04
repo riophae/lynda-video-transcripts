@@ -98,11 +98,11 @@ async function ensureLoggedIn() {
         if (isLoggedIn) {
           resolve();
         } else {
-          page.evaluate(() => {
-            document.getElementById('usernameInput').value = '';
-            document.getElementById('passwordInput').value = '';
+          page.evaluate(`function () {
+            document.getElementById('usernameInput').value = ${JSON.stringify(config.username)};
+            document.getElementById('passwordInput').value = ${JSON.stringify(config.password)};
             document.getElementById('lnk_login').click();
-          });
+          }`);
 
           loop(10, () => new Promise(async (res, rej) => {
             if (getLoginStatusFromCookie()) {
