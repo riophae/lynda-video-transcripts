@@ -149,22 +149,18 @@ async function openTutorialPage(url) {
       text: item.textContent.replace(/^-\s+/, '').trim(),
     })).sort((a, b) => {
       return a.start - b.start;
-    }).map((item, idx) => {
-      item.index = idx + 1;
-      return item;
     });
   });
 
   const fileName = padZero(videoInfo.tutorialNo + 1, 3) + '.srt';
   const content = transcriptData.reduce((arr, item, idx) => {
-    const { index, start, text } = item;
+    const { start, text } = item;
     const nextItem = transcriptData[idx + 1];
     const end = nextItem ? nextItem.start : videoTotalLength;
     return arr.concat([
-      index,
+      idx + 1,
       `${formatTimestamp(start)} --> ${formatTimestamp(end)}`,
       text,
-      '',
       '',
     ]);
   }, []).join(NEW_LINE).trim() + NEW_LINE;
