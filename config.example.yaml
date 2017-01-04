@@ -18,7 +18,7 @@ password:
   topsecret
 
 startPoint:
-  http://www.lynda.com/Photoshop-tutorials/Automatic-BrightnessContrast/373100/427042-4.html
+  https://www.lynda.com/Photoshop-tutorials/Automatic-BrightnessContrast/373100/427042-4.html
 
 intervalBetweenTutorialVisits:
   20
