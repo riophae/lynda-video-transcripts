@@ -6,14 +6,9 @@
     "build": "NODE_ENV=production node worker",
     "dev": "node worker",
     "lint": "eslint . && echo \"ESLint passed ✔\"",
-    "start": "node init.js && phantomjs --load-images false lib/entry.js",
-    "test": "node lib/test",
-    "postinstall": "npm run build"
+    "start": "node init.js && phantomjs --load-images=false --config=phantomjs/config.json lib/entry.js",
+    "test": "node lib/test"
   },
-  "keywords": [
-    "lynda",
-    "crawler"
-  ],
   "author": "Riophae Lee <riophaelee@gmail.com>",
   "license": "MIT",
   "private": true,

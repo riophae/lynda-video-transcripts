@@ -1,23 +1,23 @@
-/* eslint-disable no-var, vars-on-top, no-use-before-define, func-names */
+/* eslint-disable no-use-before-define, func-names */
 
-var fs = require('fs');
-var path = require('path');
-var log = require('npmlog');
-var rimraf = require('rimraf').sync;
-var mkdirp = require('mkdirp');
-var browserify = require('browserify');
-var watchify = require('watchify');
-var babelify = require('babelify');
-var yamlify = require('yamlify');
+const fs = require('fs');
+const path = require('path');
+const log = require('npmlog');
+const rimraf = require('rimraf').sync;
+const mkdirp = require('mkdirp');
+const browserify = require('browserify');
+const watchify = require('watchify');
+const babelify = require('babelify');
+const yamlify = require('yamlify');
 
 log.level = 'verbose';
-var distDir = path.resolve(__dirname, 'lib/');
+const distDir = path.resolve(__dirname, 'lib/');
 
 rimraf(distDir);
 mkdirp(distDir);
 
 function app(name) {
-  var b = browserify({
+  const b = browserify({
     entries: ['./src/' + name + '.js'],
     cache: {},
     packageCache: {},

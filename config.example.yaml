@@ -1,11 +1,11 @@
 detectNetworkCondition:
-  yes
+  no
 
 userAgent:
   Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.73 Safari/537.36
 
 captureScreenAutomatically:
-  yes
+  no
 
 viewportSize:
   width: 1920
@@ -18,7 +18,7 @@ password:
   topsecret
 
 startPoint:
-  http://www.lynda.com/Photoshop-tutorials/Automatic-BrightnessContrast/373100/427042-4.html
+  https://www.lynda.com/Photoshop-tutorials/Automatic-BrightnessContrast/373100/427042-4.html
 
 intervalBetweenTutorialVisits:
   20
