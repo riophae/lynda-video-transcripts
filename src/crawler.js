@@ -4,6 +4,7 @@
 import fs from 'fs';
 
 import moment from 'moment';
+import sanitizeFilename from 'sanitize-filename';
 
 import config from '../config.yaml';
 import generate from './formats/srt';
@@ -121,7 +122,13 @@ async function openHomePage() {
   captureScreen(page, 'homepage');
 }
 
-async function openTutorialPage(url) {
+async function fetchCoursesTranscripts() {
+  for (let i = 0; i < config.courses.length; i++) {
+    await openTutorialPage(i, config.courses[i]);
+  }
+}
+
+async function openTutorialPage(courseIndex, url) {
   const startedAt = Date.now();
   console.log(moment().format());
 
@@ -129,17 +136,19 @@ async function openTutorialPage(url) {
   captureScreen(page, 'tutorial');
 
   const videoInfo = page.evaluate(() => {
+    const defaultTitle = document.querySelector('h1.default-title');
     const container = document.querySelector('#toc-content');
     const videoItems = container.querySelectorAll('.video-name-cont .video-name');
     const currentVideo = container.querySelector('.toc-video-item.current .video-name-cont .video-name');
 
     return {
+      courseTitle: defaultTitle.getAttribute('data-course').trim(),
       tutorialNo: videoItems::([].indexOf)(currentVideo),
       tutorialTitle: currentVideo.textContent.trim(),
       videoDuration: container.querySelector('.toc-video-item.current .video-name-cont .video-duration').textContent.trim(),
     };
   });
-  const { tutorialTitle } = videoInfo;
+  const { courseTitle, tutorialTitle } = videoInfo;
   const [, m = 0, s = 0] = videoInfo.videoDuration.match(/^(?:(\d+)m\s*)?(?:(\d+)s)?$/);
   const videoTotalLength = toInt(m) * 60 + toInt(s);
 
@@ -154,12 +163,16 @@ async function openTutorialPage(url) {
     });
   });
 
-  const { content, ext } = generate({ tutorialTitle, transcriptData, videoTotalLength });
+  const { content, ext } = generate({ courseTitle, tutorialTitle, transcriptData, videoTotalLength });
   const fileName = padZero(videoInfo.tutorialNo + 1, 3) + ext;
 
-  console.log('Tutorial title:', videoInfo.tutorialTitle);
+  console.log('Course title:', courseTitle);
+  console.log('Tutorial title:', tutorialTitle);
   console.log('Attempting to write file:', fileName, '/', 'Content length:', content.length);
-  fs.write(OUTPUT_DIR + '/' + fileName, content);
+  const outputDir = OUTPUT_DIR + '/' + padZero(courseIndex + 1, 2) + ' ' + sanitizeFilename(courseTitle);
+  const filePath = outputDir + '/' + sanitizeFilename(fileName);
+  if (!fs.exists(outputDir)) fs.makeDirectory(outputDir);
+  fs.write(filePath, content);
 
   const nextTutorialUrl = page.evaluate(() => {
     const container = document.querySelector('#toc-content');
@@ -181,7 +194,7 @@ async function openTutorialPage(url) {
       await sleep(wait);
     }
     console.log('');
-    return openTutorialPage(nextTutorialUrl);
+    return openTutorialPage(courseIndex, nextTutorialUrl);
   }
 }
 
@@ -198,7 +211,7 @@ async function init() {
     detectNetworkCondition,
     ensureLoggedIn,
     openHomePage,
-    () => openTutorialPage(config.startPoint),
+    fetchCoursesTranscripts,
     final,
   ];
 
