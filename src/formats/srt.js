@@ -2,7 +2,7 @@ import formatTimestamp from '../utils/formatTimestamp';
 import padZero from '../utils/padZero';
 
 function formatter({ H, M, S, SS }) {
-  return `${padZero(H, 2)}:${padZero(M, 2)}:${padZero(S, 2)}.${padZero(SS, 3)}`;
+  return `${padZero(H, 2)}:${padZero(M, 2)}:${padZero(S, 2)}.${padZero(SS, 2) + '0'}`;
 }
 
 const NEW_LINE = '\r\n';

@@ -6,7 +6,7 @@ import fs from 'fs';
 import moment from 'moment';
 
 import config from '../config.yaml';
-import generate from './formats/ass';
+import generate from './formats/srt';
 
 import Deferred from './utils/deferred';
 import createTimer from './utils/createTimer';
