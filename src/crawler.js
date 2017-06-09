@@ -6,7 +6,7 @@ import fs from 'fs';
 import moment from 'moment';
 
 import config from '../config.yaml';
-import generate from './formats/srt';
+import generate from './formats/ass';
 
 import Deferred from './utils/deferred';
 import createTimer from './utils/createTimer';
@@ -139,6 +139,7 @@ async function openTutorialPage(url) {
       videoDuration: container.querySelector('.toc-video-item.current .video-name-cont .video-duration').textContent.trim(),
     };
   });
+  const { tutorialTitle } = videoInfo;
   const [, m, s] = videoInfo.videoDuration.match(/^(\d+)m\s+(\d+)s$/);
   const videoTotalLength = toInt(m) * 60 + toInt(s);
 
@@ -153,7 +154,7 @@ async function openTutorialPage(url) {
     });
   });
 
-  const { content, ext } = generate({ transcriptData, videoTotalLength });
+  const { content, ext } = generate({ tutorialTitle, transcriptData, videoTotalLength });
   const fileName = padZero(videoInfo.tutorialNo + 1, 3) + ext;
 
   console.log('Tutorial title:', videoInfo.tutorialTitle);
