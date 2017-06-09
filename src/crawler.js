@@ -140,7 +140,7 @@ async function openTutorialPage(url) {
     };
   });
   const { tutorialTitle } = videoInfo;
-  const [, m, s] = videoInfo.videoDuration.match(/^(\d+)m\s+(\d+)s$/);
+  const [, m = 0, s = 0] = videoInfo.videoDuration.match(/^(?:(\d+)m\s*)?(?:(\d+)s)?$/);
   const videoTotalLength = toInt(m) * 60 + toInt(s);
 
   const transcriptData = page.evaluate(() => {
