@@ -6,18 +6,17 @@ import fs from 'fs';
 import moment from 'moment';
 
 import config from '../config.yaml';
+import generate from './formats/srt';
 
 import Deferred from './utils/deferred';
 import createTimer from './utils/createTimer';
 import captureScreen from './utils/captureScreen';
 import toInt from './utils/toInt';
 import padZero from './utils/padZero';
-import formatTimestamp from './utils/formatTimestamp';
 import sleep from './utils/sleep';
 
 const LYNDA_ORIGIN = 'https://www.lynda.com';
 const OUTPUT_DIR = 'output';
-const NEW_LINE = '\r\n';
 
 let page;
 
@@ -154,18 +153,8 @@ async function openTutorialPage(url) {
     });
   });
 
-  const fileName = padZero(videoInfo.tutorialNo + 1, 3) + '.srt';
-  const content = transcriptData.reduce((arr, item, idx) => {
-    const { start, text } = item;
-    const nextItem = transcriptData[idx + 1];
-    const end = nextItem ? nextItem.start : videoTotalLength;
-    return arr.concat([
-      idx + 1,
-      `${formatTimestamp(start)} --> ${formatTimestamp(end)}`,
-      text,
-      '',
-    ]);
-  }, []).join(NEW_LINE).trim() + NEW_LINE;
+  const { content, ext } = generate({ transcriptData, videoTotalLength });
+  const fileName = padZero(videoInfo.tutorialNo + 1, 3) + ext;
 
   console.log('Tutorial title:', videoInfo.tutorialTitle);
   console.log('Attempting to write file:', fileName, '/', 'Content length:', content.length);

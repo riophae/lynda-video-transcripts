@@ -12,5 +12,5 @@ export default function formatTimestamp(num) {
   const [sec, decimal = '00'] = (num + '').split('.');
   const [min, S] = divide(sec, 60);
   const [H, M] = divide(min, 60);
-  return `${padZero(H, 2)}:${padZero(M, 2)}:${padZero(S, 2)},${padLeft(toInt(decimal), 3, '0')}`;
+  return `${padZero(H, 2)}:${padZero(M, 2)}:${padZero(S, 2)},${padLeft(toInt(decimal) * 10, 3, '0')}`;
 }
