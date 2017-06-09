@@ -131,8 +131,8 @@ async function openTutorialPage(url) {
 
   const videoInfo = page.evaluate(() => {
     const container = document.querySelector('#toc-content');
-    const videoItems = container.querySelectorAll('.video-name-cont .video-name[role="listitem"]');
-    const currentVideo = container.querySelector('.toc-video-item.current .video-name-cont .video-name[role="listitem"]');
+    const videoItems = container.querySelectorAll('.video-name-cont .video-name');
+    const currentVideo = container.querySelector('.toc-video-item.current .video-name-cont .video-name');
 
     return {
       tutorialNo: videoItems::([].indexOf)(currentVideo),
@@ -173,8 +173,8 @@ async function openTutorialPage(url) {
 
   const nextTutorialUrl = page.evaluate(() => {
     const container = document.querySelector('#toc-content');
-    const videoItems = container.querySelectorAll('.video-name-cont .video-name[role="listitem"]');
-    const currentVideo = container.querySelector('.toc-video-item.current .video-name-cont .video-name[role="listitem"]');
+    const videoItems = container.querySelectorAll('.video-name-cont .video-name');
+    const currentVideo = container.querySelector('.toc-video-item.current .video-name-cont .video-name');
 
     const idx = videoItems::([].indexOf)(currentVideo);
     const nextVideo = videoItems[idx + 1];
@@ -188,10 +188,10 @@ async function openTutorialPage(url) {
 
     if (wait > 0) {
       console.log(`Sleep ${wait}ms…`);
-      await(sleep(wait));
+      await sleep(wait);
     }
     console.log('');
-    await openTutorialPage(nextTutorialUrl);
+    return openTutorialPage(nextTutorialUrl);
   }
 }
 
