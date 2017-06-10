@@ -7,7 +7,7 @@ import moment from 'moment';
 import sanitizeFilename from 'sanitize-filename';
 
 import config from '../config.yaml';
-import generate from './formats/srt';
+import generate from './formats/ass';
 
 import Deferred from './utils/deferred';
 import createTimer from './utils/createTimer';
