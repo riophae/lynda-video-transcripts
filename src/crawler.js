@@ -127,6 +127,7 @@ async function fetchCoursesTranscripts() {
   let dirName;
   let startPoint;
   for (let i = 0; i < config.courses.length; i++) {
+    if (i !== 0) console.log('');
     if (typeof config.courses[i] === 'string') {
       dirName = '';
       startPoint = config.courses[i];
