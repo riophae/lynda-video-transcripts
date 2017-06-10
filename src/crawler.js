@@ -123,12 +123,21 @@ async function openHomePage() {
 }
 
 async function fetchCoursesTranscripts() {
+  let dirName;
+  let startPoint;
   for (let i = 0; i < config.courses.length; i++) {
-    await openTutorialPage(i, config.courses[i]);
+    if (typeof config.courses[i] === 'string') {
+      dirName = '';
+      startPoint = config.courses[i];
+    } else {
+      dirName = config.courses[i].dirName;
+      startPoint = config.courses[i].startPoint;
+    }
+    await openTutorialPage(i, dirName, startPoint);
   }
 }
 
-async function openTutorialPage(courseIndex, url) {
+async function openTutorialPage(courseIndex, dirName, url) {
   const startedAt = Date.now();
   console.log(moment().format());
 
@@ -169,7 +178,7 @@ async function openTutorialPage(courseIndex, url) {
   console.log('Course title:', courseTitle);
   console.log('Tutorial title:', tutorialTitle);
   console.log('Attempting to write file:', fileName, '/', 'Content length:', content.length);
-  const outputDir = OUTPUT_DIR + '/' + padZero(courseIndex + 1, 2) + ' ' + sanitizeFilename(courseTitle);
+  const outputDir = OUTPUT_DIR + '/' + (dirName || (padZero(courseIndex + 1, 2) + ' ' + sanitizeFilename(courseTitle)));
   const filePath = outputDir + '/' + sanitizeFilename(fileName);
   if (!fs.exists(outputDir)) fs.makeDirectory(outputDir);
   fs.write(filePath, content);
@@ -194,7 +203,7 @@ async function openTutorialPage(courseIndex, url) {
       await sleep(wait);
     }
     console.log('');
-    return openTutorialPage(courseIndex, nextTutorialUrl);
+    return openTutorialPage(courseIndex, dirName, nextTutorialUrl);
   }
 }
 
