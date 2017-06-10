@@ -25,6 +25,7 @@ function openPage(url, actionName) {
   page = require('webpage').create();
   page.viewportSize = config.viewportSize;
   page.settings.userAgent = config.userAgent;
+  page.onError = function noop() {};
 
   const timer = createTimer(actionName);
   const deferred = new Deferred();
@@ -148,10 +149,15 @@ async function openTutorialPage(courseIndex, dirName, url) {
     try {
       await openPage(url, `Open tutorial page ${url}`);
       captureScreen(page, 'tutorial');
+      const looksGood = page.evaluate(() => ( // eslint-disable-line no-loop-func
+        !!document.getElementById('course-page') &&
+        !!document.querySelector('h1.default-title')
+      ));
+      if (!looksGood) retry = true;
     } catch (err) {
       if (Date.now() - t < 250) retry = true;
-      await sleep(2000);
     }
+    if (retry) await sleep(2000);
   } while (retry);
 
   const videoInfo = page.evaluate(() => {
