@@ -141,8 +141,18 @@ async function openTutorialPage(courseIndex, dirName, url) {
   const startedAt = Date.now();
   console.log(moment().format());
 
-  await openPage(url, `Open tutorial page ${url}`);
-  captureScreen(page, 'tutorial');
+  let retry;
+  do {
+    retry = false;
+    const t = Date.now();
+    try {
+      await openPage(url, `Open tutorial page ${url}`);
+      captureScreen(page, 'tutorial');
+    } catch (err) {
+      if (Date.now() - t < 250) retry = true;
+      await sleep(2000);
+    }
+  } while (retry);
 
   const videoInfo = page.evaluate(() => {
     const defaultTitle = document.querySelector('h1.default-title');
