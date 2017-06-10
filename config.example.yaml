@@ -19,6 +19,9 @@ password:
 
 courses:
   - https://www.lynda.com/Photoshop-tutorials/Automatic-BrightnessContrast/373100/427042-4.html
+  - https://www.lynda.com/JavaScript-tutorials/JavaScript-validation-troubleshooting/574716/612093-4.html
+  - dirName: Excel
+    startPoint: https://www.lynda.com/Excel-tutorials/Exploring-Page-Layout-tab-view/116478/125049-4.html
 
 intervalBetweenTutorialVisits:
   20
