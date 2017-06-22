@@ -6,7 +6,7 @@
     "build": "NODE_ENV=production node worker",
     "dev": "node worker",
     "lint": "eslint . && echo \"ESLint passed ✔\"",
-    "start": "npm run build && node init.js && phantomjs --load-images=false --config=phantomjs/config.json lib/entry.js",
+    "start": "npm run build && node init.js && phantomjs --load-images=false --config=phantomjs/config.json lib/crawler-entry.js",
     "test": "node lib/test"
   },
   "author": "Riophae Lee <riophaelee@gmail.com>",

@@ -53,4 +53,4 @@ function app(name) {
   bundle();
 }
 
-['entry', 'test'].forEach(app);
+['crawler-entry'].forEach(app);
