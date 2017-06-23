@@ -152,7 +152,8 @@ async function openTutorialPage(courseIndex, dirName, url) {
       captureScreen(page, 'tutorial');
       const looksGood = page.evaluate(() => ( // eslint-disable-line no-loop-func
         !!document.getElementById('course-page') &&
-        !!document.querySelector('h1.default-title')
+        !!document.querySelector('h1.default-title') &&
+        !!document.getElementById('cover-wrapper')
       ));
       if (!looksGood) retry = true;
     } catch (err) {
@@ -174,6 +175,11 @@ async function openTutorialPage(courseIndex, dirName, url) {
       videoDuration: container.querySelector('.toc-video-item.current .video-name-cont .video-duration').textContent.trim(),
     };
   });
+
+  if (!videoInfo) {
+    return openTutorialPage(...arguments);
+  }
+
   const { courseTitle, tutorialTitle } = videoInfo;
   const [, m = 0, s = 0] = videoInfo.videoDuration.match(/^(?:(\d+)m\s*)?(?:(\d+)s)?$/);
   const videoTotalLength = toInt(m) * 60 + toInt(s);
@@ -195,7 +201,7 @@ async function openTutorialPage(courseIndex, dirName, url) {
   console.log('Course title:', courseTitle);
   console.log('Tutorial title:', tutorialTitle);
   console.log('Attempting to write file:', fileName, '/', 'Content length:', content.length);
-  const outputDir = OUTPUT_DIR + '/' + (dirName || (padZero(courseIndex + 1, 2) + ' ' + sanitizeFilename(courseTitle)));
+  const outputDir = OUTPUT_DIR + '/' + (dirName || sanitizeFilename(courseTitle));
   const filePath = outputDir + '/' + sanitizeFilename(fileName);
   if (!fs.exists(outputDir)) fs.makeDirectory(outputDir);
   fs.write(filePath, content);
